@@ -7,7 +7,7 @@ vec3 red = vec3(255.,21.,47.)/255.;//vec3(.97,.12,.21);
 vec3 yellow = vec3(255.,198.,80.)/255.;
 vec3 pink = vec3(255.,159.,196.)/255.;
 
-#define sat(x) clamp(x, 0., 1.)
+float sat(float a) { return clamp(a, 0., 1.); }
 
 struct teststruct
 {
