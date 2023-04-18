@@ -217,6 +217,8 @@ namespace TranspileShader
             sb.AppendTabs(depth).Append("for (");
             //Var_Declarations(fore.Item1.Item1, fore.Item1.Item2, sb);
             sb.Append(";");
+            Handle_Expr(fore.Item2.Value, sb);
+            sb.Append(";");
             sb.AppendLine(")");
             HandleStmt(fore.Item4, depth, sb);
             //Decl decl = current as Decl;
@@ -225,15 +227,20 @@ namespace TranspileShader
         }
         static void Stmt_While(Stmt current, int depth, StringBuilder sb)
         {
-            //Decl decl = current as Decl;
-            //Var_Declarations(decl.Item.Item1, decl.Item.Item2, sb);
-            //sb.AppendLine(";");
+            Stmt.While while_ = current as Stmt.While;
+            sb.AppendTabs(depth).Append("while (");
+            Handle_Expr(while_.Item1, sb);
+            sb.AppendLine(")");
+            HandleStmt(while_.Item2, depth, sb);
         }
         static void Stmt_DoWhile(Stmt current, int depth, StringBuilder sb)
         {
-            //Decl decl = current as Decl;
-            //Var_Declarations(decl.Item.Item1, decl.Item.Item2, sb);
-            //sb.AppendLine(";");
+            Stmt.DoWhile while_ = current as Stmt.DoWhile;
+            sb.AppendTabs(depth).AppendLine("do");
+            HandleStmt(while_.Item2, depth, sb);
+            sb.AppendTabs(depth).Append("while (");
+            Handle_Expr(while_.Item1, sb);
+            sb.AppendLine(");");
         }
         static void Stmt_Jump(Stmt current, int depth, StringBuilder sb)
         {
@@ -292,14 +299,24 @@ namespace TranspileShader
             HandleStmt(func.Item2, 0, sb);
         }
 
+        static void TopLevel_TLDecl(TopLevel tl, StringBuilder sb)
+        {
+            TLDecl tldecl = tl as TLDecl; // TODO
+
+        }
+        static void TopLevel_TypeDecl(TopLevel tl, StringBuilder sb)
+        {
+            TypeDecl typedecl = tl as TypeDecl; // TODO
+
+        }
         static void TopLevel(Ast.Shader shader, StringBuilder sb)
         {
             Dictionary<System.Type, Action<TopLevel, StringBuilder>> match = new Dictionary<System.Type, Action<TopLevel, StringBuilder>>
             {
                 { typeof(TLVerbatim),TopLevel_TLVerbatim },
                 { typeof(Function),TopLevel_TLFunction },
-                { typeof(TLDecl),null },
-                { typeof(TypeDecl),null },
+                { typeof(TLDecl),TopLevel_TLDecl },
+                { typeof(TypeDecl),TopLevel_TypeDecl },
                 { typeof(Precision),null },
             };
             foreach (var topLvlStmt in shader.code)
