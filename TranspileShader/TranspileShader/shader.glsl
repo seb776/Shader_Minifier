@@ -9,6 +9,12 @@ vec3 pink = vec3(255.,159.,196.)/255.;
 
 #define sat(x) clamp(x, 0., 1.)
 
+struct teststruct
+{
+    int test;
+    float variable;
+};
+
 float cir(vec2 p, float r) { return length(p)-r; }
 
 vec3 patternBack(vec2 uv)

@@ -7,6 +7,7 @@ using static Ast.TopLevel;
 using static Ast;
 using Microsoft.FSharp.Collections;
 using static Ast.Stmt;
+using static Ast.TypeSpec;
 
 namespace TranspileShader
 {
@@ -79,7 +80,7 @@ namespace TranspileShader
             Ast.Expr.FunCall fun = expr as Ast.Expr.FunCall;
             var isOperator = fun.Item1 is Ast.Expr.Op;
             if (isOperator)
-            {   
+            {
                 if (fun.Item2.Length == 1)
                 {
                     Handle_Expr(fun.Item1, sb);
@@ -88,10 +89,44 @@ namespace TranspileShader
                 if (fun.Item2.Length == 2)
                 {
                     Handle_Expr(fun.Item2.First(), sb);
-                    sb.Append(" ");
-                    Handle_Expr(fun.Item1, sb);
-                    sb.Append(" ");
-                    Handle_Expr(fun.Item2.Last(), sb);
+
+                    var matchOp = new Dictionary<string, string>()
+                    {
+                        { "-", "sub" },
+                        { "+", "add" },
+                        { "/", "div" },
+                        { "*", "mul" },
+                    };
+                    var matchAssignOp = new Dictionary<string, string>()
+                    {
+                        { "-=", "sub" },
+                        { "+=", "add" },
+                        { "/=", "div" },
+                        { "*=", "mul" },
+                    };
+                    string operatorFun = "";
+                    if (matchOp.TryGetValue((fun.Item1 as Ast.Expr.Op).Item, out operatorFun))
+                    {
+                        sb.Append(".").Append(operatorFun).Append("(");
+                        Handle_Expr(fun.Item2.Last(), sb);
+                        sb.Append(")");
+                    }
+                    else if (matchAssignOp.TryGetValue((fun.Item1 as Ast.Expr.Op).Item, out operatorFun)) // This "should" handle += -= ...
+                    {
+                        sb.Append(" = ");
+                        Handle_Expr(fun.Item2.First(), sb);
+                        sb.Append(".").Append(operatorFun).Append("(");
+                        Handle_Expr(fun.Item2.Last(), sb);
+                        sb.Append(")");
+                    }
+                    else
+                    {
+                        sb.Append(" ");
+                        Handle_Expr(fun.Item1, sb);
+                        sb.Append(" ");
+                        Handle_Expr(fun.Item2.Last(), sb);
+
+                    }
                 }
             }
             else
@@ -160,8 +195,11 @@ namespace TranspileShader
             foreach (var elt in declarations)
             {
                 sb.Append(elt.name.Name);
-                sb.Append(" = ");
-                Handle_Expr(elt.init.Value, sb);
+                if (elt.init != null)
+                {
+                    sb.Append(" = ");
+                    Handle_Expr(elt.init.Value, sb);
+                }
                 if (elt != declarations.Last())
                     sb.Append(", ");
             }
@@ -170,9 +208,9 @@ namespace TranspileShader
         {
             Block block = current as Block;
             sb.AppendTabs(depth).AppendLine("{");
-            foreach(var stmt in block.Item)
+            foreach (var stmt in block.Item)
             {
-                HandleStmt(stmt, depth+1, sb);
+                HandleStmt(stmt, depth + 1, sb);
             }
             sb.AppendTabs(depth).AppendLine("}");
         }
@@ -244,9 +282,14 @@ namespace TranspileShader
         }
         static void Stmt_Jump(Stmt current, int depth, StringBuilder sb)
         {
-            //Decl decl = current as Decl;
-            //Var_Declarations(decl.Item.Item1, decl.Item.Item2, sb);
-            //sb.AppendLine(";");
+            Stmt.Jump jump = current as Stmt.Jump;
+            var jumpStr = jump.Item1.ToString().ToLower();
+            sb.AppendTabs(depth).Append(jumpStr).Append(" ");
+            if (jump.Item2 != null)
+            {
+                Handle_Expr(jump.Item2.Value, sb);
+            }
+            sb.AppendLine(";");
         }
         static void Stmt_Verbatim(Stmt current, int depth, StringBuilder sb)
         {
@@ -296,18 +339,42 @@ namespace TranspileShader
                     sb.Append(", ");
             }
             sb.AppendLine(")");
+            bool isNotBlock = func.Item2.GetType() != typeof(Stmt.Block);
+            if (isNotBlock)
+                sb.AppendLine("{");
             HandleStmt(func.Item2, 0, sb);
+            if (isNotBlock)
+                sb.AppendLine("}");
         }
 
         static void TopLevel_TLDecl(TopLevel tl, StringBuilder sb)
         {
             TLDecl tldecl = tl as TLDecl; // TODO
-
+            Var_Declarations(tldecl.Item.Item1, tldecl.Item.Item2, sb);
+            sb.AppendLine(";");
         }
         static void TopLevel_TypeDecl(TopLevel tl, StringBuilder sb)
         {
             TypeDecl typedecl = tl as TypeDecl; // TODO
-
+            TypeStruct struc = typedecl.Item as TypeStruct;
+            var variables = struc.Item3.SelectMany((el) => { return el.Item2; });
+            sb.Append("class ").Append(struc.Item2.Value.Name).AppendLine();
+            sb.AppendLine("{");
+            sb.Append("\t").Append("constructor(");
+            foreach (var decl in variables)
+            {
+                sb.Append(decl.name.Name);
+                if (decl != variables.Last())
+                { sb.Append(", "); }
+            }
+            sb.AppendLine(")");
+            sb.Append("\t").AppendLine("{");
+            foreach (var decl in variables) // TODO
+            {
+                sb.Append("\t\t").Append("this.").Append(decl.name.Name).Append($" = {decl.name.Name};").AppendLine();
+            }
+            sb.Append("\t").AppendLine("}");
+            sb.AppendLine("}");
         }
         static void TopLevel(Ast.Shader shader, StringBuilder sb)
         {
