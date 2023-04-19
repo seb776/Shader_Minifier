@@ -42,7 +42,7 @@ namespace TranspileShader
         static void Expr_Int(Ast.Expr expr, StringBuilder sb)
         {
             Ast.Expr.Int int_ = expr as Ast.Expr.Int;
-            sb.Append(int_.Item1);
+            sb.Append("(" + int_.Item1 + ")");
         }
         static void Expr_Op(Ast.Expr expr, StringBuilder sb)
         {
@@ -72,7 +72,8 @@ namespace TranspileShader
         static void Expr_Float(Ast.Expr expr, StringBuilder sb)
         {
             Ast.Expr.Float float_ = expr as Ast.Expr.Float;
-            sb.Append(float_.Item1);
+            var str = float_.Item1.ToString("(0.00)");
+            sb.Append(str);
         }
         static void Expr_FunCall(Ast.Expr expr, StringBuilder sb)
         {
@@ -133,7 +134,7 @@ namespace TranspileShader
             {
                 if (fun.Item1.ToString().Contains("vec"))
                 {
-                    sb.Append("new ");
+                    sb.Append("glm.");
                 }
                 Handle_Expr(fun.Item1, sb);
                 sb.Append("(");

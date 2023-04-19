@@ -88,10 +88,10 @@ vec2 uvt = vec2(abs(uv.x),uv.y*.7) -vec2(.38,-.2);
   return col;
 }
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+void mainImage(in vec2 fragCoord ) {
   vec2 uv = (fragCoord.xy-.5*iResolution.xy) / iResolution.xx;
   uv*=2.;
   vec3 col = rdr(uv, mix(40.,400.,sin((uv.x+uv.y)*15.-iTime)*.5+.5));
   col = post(uv, col);
-  fragColor = vec4(col, 1.0);
+  return vec4(col, 1.0);
 }
