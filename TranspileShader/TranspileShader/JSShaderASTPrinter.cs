@@ -132,7 +132,29 @@ namespace TranspileShader
             }
             else
             {
-                if (fun.Item1.ToString().Contains("vec"))
+                HashSet<string> glFuncs = new HashSet<string>()
+                {
+                    "vec2",
+                    "vec3",
+                    "vec4",
+                    "mix",
+                    "distance",
+                    "length",
+                    "sin",
+                    "cos",
+                    "pow",
+                    "atan",
+                    "fract",
+                    "floor",
+                    "ceil",
+                    "round",
+                    "abs",
+                    "clamp",
+                    "mod",
+                    "min",
+                    "max"
+                };
+                if (glFuncs.Contains(fun.Item1.ToString().Substring(11)))
                 {
                     sb.Append("glm.");
                 }
@@ -201,6 +223,8 @@ namespace TranspileShader
                     sb.Append(" = ");
                     Handle_Expr(elt.init.Value, sb);
                 }
+                else
+                    throw new Exception("You must initialize variables at declaration");
                 if (elt != declarations.Last())
                     sb.Append(", ");
             }

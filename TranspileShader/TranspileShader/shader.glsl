@@ -19,7 +19,7 @@ float cir(vec2 p, float r) { return length(p)-r; }
 
 vec3 patternBack(vec2 uv)
 {
-  vec3 col;
+  vec3 col = vec3(0.);
   float rep = 0.38;
   uv-=vec2(.1);
   float r = abs(cir(mod(uv,rep)-rep*.5,.14))-0.03;
@@ -85,12 +85,12 @@ vec2 uvt = vec2(abs(uv.x),uv.y*.7) -vec2(.38,-.2);
     col = mix(col, spt.xyz,1.-sat(spt.w*shp));
     ++i;
   }
+  col = vec3(1.)*(1.-sat((length(uv)-.2)*400.));
   return col;
 }
 
 void mainImage(in vec2 fragCoord ) {
   vec2 uv = (fragCoord.xy-.5*iResolution.xy) / iResolution.xx;
-  uv*=2.;
   vec3 col = rdr(uv, mix(40.,400.,sin((uv.x+uv.y)*15.-iTime)*.5+.5));
   col = post(uv, col);
   return vec4(col, 1.0);
